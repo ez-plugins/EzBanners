@@ -1,0 +1,20 @@
+name: EzBanners
+main: com.skyblockexp.ezbanners.EzBannersPlugin
+version: ${project.version}
+author: SkyblockExp
+softdepend:
+  - PlaceholderAPI
+commands:
+  ezbanners:
+    description: EzBanners main command (/ezbanners link <token>, /ezbanners reload)
+    usage: /ezbanners <link|reload>
+    permission: ezbanners.link
+    aliases: []
+permissions:
+  ezbanners.link:
+    description: Allows linking the server to the EzBanners API.
+    default: op
+
+  ezbanners.reload:
+    description: Allows reloading the EzBanners configuration.
+    default: op

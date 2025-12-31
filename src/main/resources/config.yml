@@ -1,0 +1,32 @@
+api:
+  endpoint: "https://ezbanners.org/api/server/update"
+  token: ""
+plugin:
+  endpoint: "https://ezbanners.org/api/plugins/{plugin_uuid}/data"
+  uuid: ""
+  token: ""
+server:
+  uuid: ""
+sync:
+  interval: 300
+  max-backoff: 1200
+enabled:
+  data:
+    fields:
+      - server_name
+      - online_players
+      - max_players
+      - server_version
+      - tps_1m
+      - tps_5m
+      - tps_15m
+      - uptime
+      - motd
+      - whitelist
+      - placeholders
+placeholderapi:
+  mappings:
+    example_rank: "%vault_rank%"
+    example_balance: "%vault_eco_balance_formatted%"
+debug:
+  enabled: false
