@@ -2,82 +2,77 @@ package com.skyblockexp.ezbanners.sync;
 
 import com.skyblockexp.ezbanners.EzBannersPlugin;
 import com.skyblockexp.ezbanners.config.EzBannersConfig;
+import com.skyblockexp.ezbanners.domain.SyncPayload;
 import com.skyblockexp.ezbanners.http.ApiClient;
 import com.skyblockexp.ezbanners.metrics.ServerDataCollector;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Map;
-
+/**
+ * Coordinator for sync operations. Delegates scheduling to SyncScheduler
+ * and execution to SyncExecutor.
+ */
 public class SyncService {
     private final EzBannersPlugin plugin;
+    private final SyncScheduler scheduler;
+    private final SyncExecutor executor;
     private EzBannersConfig config;
     private ServerDataCollector dataCollector;
-    private final ApiClient apiClient;
-    private BukkitTask scheduledTask;
-    private int failureCount;
-    private boolean running;
 
     public SyncService(EzBannersPlugin plugin, EzBannersConfig config, ServerDataCollector dataCollector) {
         this.plugin = plugin;
         this.config = config;
         this.dataCollector = dataCollector;
-        this.apiClient = new ApiClient(plugin);
+        this.scheduler = new SyncScheduler(plugin, config);
+        this.executor = new SyncExecutor(plugin, config, dataCollector);
     }
 
     public void start() {
-        if (running) {
+        if (scheduler.isRunning()) {
+            plugin.debug("SyncService already running");
             return;
         }
-        running = true;
-        scheduleNext(0);
+        plugin.debug("Starting SyncService");
+        scheduler.start(this::performSync);
     }
 
     public void stop() {
-        running = false;
-        if (scheduledTask != null) {
-            scheduledTask.cancel();
-            scheduledTask = null;
-        }
+        plugin.debug("Stopping SyncService");
+        scheduler.stop();
     }
 
     public void reload(EzBannersConfig config, ServerDataCollector dataCollector) {
+        plugin.debug("Reloading SyncService");
         this.config = config;
         this.dataCollector = dataCollector;
+        scheduler.updateConfig(config);
+        executor.updateConfig(config, dataCollector);
         stop();
         start();
     }
 
-    private void scheduleNext(long delaySeconds) {
-        if (!running) {
-            return;
-        }
-        long ticks = Math.max(1, delaySeconds * 20L);
-        scheduledTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                syncOnce();
+    private void performSync() {
+        plugin.debug("Performing sync");
+        try {
+            SyncPayload payload = executor.buildPayload();
+            ApiClient.ApiResponse response = executor.executeSync(payload);
+            
+            if (response.isSuccess()) {
+                plugin.debug("Sync successful: " + response.getStatusCode());
+                scheduler.onSyncSuccess(this::performSync);
+            } else {
+                plugin.debug("Sync failed: " + response.getStatusCode() + " - " + response.getMessage());
+                scheduler.onSyncFailure(this::performSync);
             }
-        }.runTaskLaterAsynchronously(plugin, ticks);
+        } catch (Exception ex) {
+            plugin.getLogger().warning("[EzBanners] Sync error: " + ex.getMessage());
+            scheduler.onSyncFailure(this::performSync);
+        }
     }
 
-    private void syncOnce() {
-        if (!running) {
-            return;
-        }
-        Map<String, Object> data = dataCollector.collectData();
-        ApiClient.ApiResponse response = apiClient.postPayload(config, data);
-        if (response.isSuccess()) {
-            failureCount = 0;
-            plugin.debug("Synced data successfully. Status: " + response.getStatusCode());
-            scheduleNext(config.getSyncIntervalSeconds());
-        } else {
-            failureCount++;
-            int backoff = (int) Math.min(config.getMaxBackoffSeconds(),
-                config.getSyncIntervalSeconds() * Math.pow(2, failureCount));
-            plugin.getLogger().warning("[EzBanners] Sync failed (" + response.getStatusCode() + "): " + response.getMessage());
-            plugin.debug("Retrying sync in " + backoff + "s.");
-            scheduleNext(backoff);
-        }
+    public SyncScheduler getScheduler() {
+        return scheduler;
+    }
+
+    public SyncExecutor getExecutor() {
+        return executor;
     }
 }

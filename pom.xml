@@ -8,12 +8,20 @@
         <artifactId>skyblockexp-parent</artifactId>
         <version>0.5.38-SNAPSHOT</version>
     </parent>
-
+ 
     <artifactId>ezbanners</artifactId>
-    <version>0.2.1</version>
+    <version>0.3.0</version>
     <name>EzBanners Plugin</name>
     <description>Collects server data and syncs it to a remote banner API.</description>
     <packaging>jar</packaging>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/ez-plugins/EzBanners</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -27,6 +35,12 @@
             <artifactId>paper-api</artifactId>
             <version>${paper.api.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -60,11 +74,42 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>org/bukkit/**</exclude>
-                    </excludes>
-                </configuration>
+                <executions>
+                    <!-- Main plugin JAR with all classes -->
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>org/bukkit/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- API JAR with only public API classes -->
+                    <execution>
+                        <id>api-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>api</classifier>
+                            <includes>
+                                <include>com/skyblockexp/ezbanners/api/provider/**</include>
+                                <include>com/skyblockexp/ezbanners/domain/**</include>
+                            </includes>
+                            <archive>
+                                <manifestEntries>
+                                    <Implementation-Title>EzBanners API</Implementation-Title>
+                                    <Implementation-Version>${project.version}</Implementation-Version>
+                                </manifestEntries>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

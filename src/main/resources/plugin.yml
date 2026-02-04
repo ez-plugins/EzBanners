@@ -6,8 +6,8 @@ softdepend:
   - PlaceholderAPI
 commands:
   ezbanners:
-    description: EzBanners main command (/ezbanners link <token>, /ezbanners reload)
-    usage: /ezbanners <link|reload>
+    description: EzBanners main command (/ezbanners link <token>, /ezbanners reload, /ezbanners status)
+    usage: /ezbanners <link|reload|status>
     permission: ezbanners.link
     aliases: []
 permissions:
@@ -17,4 +17,8 @@ permissions:
 
   ezbanners.reload:
     description: Allows reloading the EzBanners configuration.
+    default: op
+
+  ezbanners.status:
+    description: Allows viewing the EzBanners status.
     default: op

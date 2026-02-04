@@ -1,167 +1,277 @@
-# 📸 EzBanners
+# EzBanners
 
-Dynamic Minecraft banner generation API & plugin  
-Generate live PNG/WebP banners for your server lists - fast, flexible, and compatible with Spigot, Paper & Bukkit (MC 1.7–1.21+).
+EzBanners collects live server data and securely syncs it to your banner API for dynamic image generation.
 
-SpigotMC resource:  
-https://www.spigotmc.org/resources/1-7-1-21-ezbanners-png-webp-banner-generation-public-api.1540/
+**Official Repository:** [github.com/ez-plugins/EzBanners](https://github.com/ez-plugins/EzBanners)
 
-PaperMC (Hengar) resource:
-https://hangar.papermc.io/EzPlugins/EzBanners
+## Artifacts
 
----
+This project produces two JAR files:
 
-## 🚀 Features
+1. **EzBanners.jar** - The full plugin JAR for Minecraft servers
+   - Contains all plugin classes and resources
+   - Deploy this to your server's `plugins/` folder
 
-- 🔥 Live server stats – player count, TPS, MOTD, and more  
-- 📊 Real-time banners – generated dynamically via API  
-- 🌐 PNG & WebP support – crisp, modern images  
-- 🛡 Secure sync – API tokens & signed requests  
-- ⚡ Async & lightweight – optimized for performance  
-- 🧩 Plugin + API – works with or without installing the plugin  
-- 🧠 Wide compatibility – Minecraft 1.7 → 1.21+
+2. **EzBanners-api.jar** - The API-only JAR for plugin developers
+   - Contains only the public API interfaces and domain models
+   - Use as a Maven/Gradle dependency when developing plugins that integrate with EzBanners
+   - Available from GitHub Packages: `com.github.ez-plugins:ezbanners-api:0.3.0`
 
----
+## Features
+- Compatible with Minecraft 1.7 – 1.21+ (Bukkit/Spigot/Paper)
+- Async HTTP sync with exponential backoff and jitter
+- Optional PlaceholderAPI support
+- Secure token + HMAC signatures
+- Public API for external plugins
+- Configurable feature flags
 
-## 📥 Download
+## Architecture
 
-Get the latest plugin build from SpigotMC or Hangar (PaperMC):
+### Module Structure
 
-https://www.spigotmc.org/resources/1-7-1-21-ezbanners-png-webp-banner-generation-public-api.1540/
-https://hangar.papermc.io/EzPlugins/EzBanners
+#### Domain Layer (`domain/`)
+- **ServerData**: Immutable model for collected server metrics
+- **SyncPayload**: Immutable model for sync payloads with headers
 
----
+#### Service Layer (`sync/`, `metrics/`, `http/`)
+- **SyncScheduler**: Handles timing and exponential backoff with jitter
+- **SyncExecutor**: Builds payloads and executes HTTP requests
+- **SyncService**: Coordinates scheduling and execution
+- **ServerDataCollector**: Collects server metrics based on config
+- **ApiClient**: Standardized HTTP client with consistent headers
 
-## 🧠 Introduction
+#### Plugin Layer (`lifecycle/`, `command/`)
+- **PluginLifecycle**: Manages startup/shutdown flows
+- **EzBannersPlugin**: Bukkit plugin entry point
+- **Commands**: LinkCommand, ReloadCommand, StatusCommand
 
-EzBanners allows you to generate dynamic Minecraft server banners using live data.
+#### Configuration (`config/`)
+- **EzBannersConfig**: Type-safe config wrapper with validation
+- **ConfigKeys**: Centralized config key constants
 
-You can use EzBanners in two ways:
+#### Public API (`api/provider/`)
+- **DataProvider**: Interface for custom data providers
+- **PlaceholderProvider**: Interface for custom placeholder providers
+- **EzBannersApi**: Public API for external plugin integration
 
-1. With the plugin – automatic, secure syncing of server stats  
-2. Without the plugin – generate banners directly via the public API  
+## Setup
+1. Drop `EzBanners.jar` into your server `plugins/` folder.
+2. Start the server to generate `plugins/EzBanners/config.yml`.
+3. Edit `config.yml` and set:
+   - `api.endpoint`
+   - `api.token` (or use `/ezbanners link <token>`)
+4. (Optional) Configure `placeholderapi.mappings` if you use PlaceholderAPI.
+5. Restart or reload the plugin.
 
-Perfect for:
-- Server lists  
-- Websites  
-- Forums  
-- Dashboards  
-- Social embeds  
+## Commands
+- `/ezbanners link <token>` — Links the server to your API token
+- `/ezbanners reload` — Reloads the configuration
+- `/ezbanners status` — Shows detailed plugin status
 
----
+## Permissions
+- `ezbanners.link` — Allows the link command (default: op)
+- `ezbanners.reload` — Allows the reload command (default: op)
+- `ezbanners.status` — Allows the status command (default: op)
 
-## 📦 Installation (Plugin)
+## Configuration Reference
 
-1. Download EzBanners.jar  
-2. Place it in your server’s plugins/ folder  
-3. Start the server (config will be generated)  
-4. Configure your API token  
-5. Restart or reload the server  
-
----
-
-## 🔐 Linking Your Server
-
-Link your server to the EzBanners API or dashboard: `/ezbanners link <your_api_token>`
-
-This enables secure data syncing for advanced templates.
-
----
-
-## 🌐 Public Banner API (No Plugin Required)
-
-You can generate banners directly via HTTP:
-
-```bash
-GET https://ezbanners.org/api/banner  
-   ?server_name=MyServer  
-   &online_players=12  
-   &max_players=100  
-   &motd_line_1=Welcome  
-   &motd_line_2=To%20EzBanners  
-   &template_key=minimal-status  
-   &width=468  
-   &height=60  
-   &format=webp  
+### API Configuration
+```yaml
+api:
+  endpoint: "https://ezbanners.org/api/server/update"  # Banner API endpoint
+  token: ""  # Your API token (use /ezbanners link <token>)
 ```
 
-Returns a dynamically generated PNG or WebP image.
+### Plugin Stats Configuration
+```yaml
+plugin:
+  endpoint: "https://ezbanners.org/api/plugins/{plugin_uuid}/data"
+  uuid: ""  # Plugin UUID for stats tracking
+  token: ""  # Plugin token for authentication
+```
 
----
+### Server Configuration
+```yaml
+server:
+  uuid: ""  # Auto-generated server UUID (do not modify)
+```
 
-## 🛠 Plugin API (Advanced)
+### Sync Configuration
+```yaml
+sync:
+  interval: 300  # Sync interval in seconds (min: 5)
+  max-backoff: 1200  # Maximum backoff on failure in seconds
+```
 
-When using the plugin, EzBanners can:
-- Send signed server data  
-- Update banners automatically  
-- Enable advanced & premium templates  
-- Reduce manual configuration  
+### Feature Flags
+```yaml
+features:
+  metrics:
+    enabled: true  # Enable/disable metrics collection
+  placeholders:
+    enabled: true  # Enable/disable PlaceholderAPI integration
+  website-sync:
+    enabled: true  # Enable/disable website sync
+```
 
----
+### Data Fields
+Configure which data fields to collect and send:
+```yaml
+enabled:
+  data:
+    fields:
+      - server_name
+      - online_players
+      - max_players
+      - server_version
+      - tps_1m
+      - tps_5m
+      - tps_15m
+      - uptime
+      - motd
+      - whitelist
+      - placeholders
+```
 
-## 🟦 Supported Platforms
+### PlaceholderAPI Mappings
+Define custom placeholder mappings:
+```yaml
+placeholderapi:
+  mappings:
+    example_rank: "%vault_rank%"
+    example_balance: "%vault_eco_balance_formatted%"
+```
 
-- Bukkit  
-- Spigot  
-- Paper  
+### Debug Mode
+```yaml
+debug:
+  enabled: false  # Enable verbose debug logging
+```
 
-Minecraft versions: 1.7 – 1.21+
+## Public API Usage
 
----
+### Adding the API Dependency
 
-## 📋 Example Use Cases
+The EzBanners API is available as a separate artifact on GitHub Packages from the [ez-plugins/EzBanners](https://github.com/ez-plugins/EzBanners) repository.
 
-- Forum server banners  
-- Website server status images  
-- Discord or community embeds  
-- Auto-updating server visuals  
+#### Maven
+Add the GitHub Packages repository and dependency to your `pom.xml`:
 
----
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/ez-plugins/EzBanners</url>
+    </repository>
+</repositories>
 
-## 🔗 Useful Links
+<dependencies>
+    <dependency>
+        <groupId>com.github.ez-plugins</groupId>
+        <artifactId>ezbanners-api</artifactId>
+        <version>0.3.0</version>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+```
 
-SpigotMC resource  
-https://www.spigotmc.org/resources/1-7-1-21-ezbanners-png-webp-banner-generation-public-api.1540/
+**Note:** You need to authenticate with GitHub Packages. Add your GitHub credentials to `~/.m2/settings.xml`:
 
-API documentation  
-https://ezbanners.org/docs/api
+```xml
+<servers>
+    <server>
+        <id>github</id>
+        <username>YOUR_GITHUB_USERNAME</username>
+        <password>YOUR_GITHUB_TOKEN</password>
+    </server>
+</servers>
+```
 
-Website & banner designer  
-https://ezbanners.org
+#### Gradle
+```groovy
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/ez-plugins/EzBanners")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+}
 
-Support Discord  
-https://discord.gg/yWP95XfmBS
+dependencies {
+    compileOnly 'com.github.ez-plugins:ezbanners-api:0.3.0'
+}
+```
 
----
+### For Plugin Developers
 
+#### Implementing a Custom Data Provider
 
-## 📜 License
+```java
+import com.skyblockexp.ezbanners.api.provider.DataProvider;
+import com.skyblockexp.ezbanners.domain.ServerData;
 
-MIT License
+public class MyDataProvider implements DataProvider {
+    @Override
+    public ServerData collectData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("custom_metric", getMyMetric());
+        return new ServerData(data);
+    }
+    
+    @Override
+    public String getName() {
+        return "MyPlugin";
+    }
+    
+    @Override
+    public int getPriority() {
+        return 10; // Higher = called earlier
+    }
+}
+```
 
-Copyright (c) 2025 Gyvex (63536625)
+#### Sending Plugin Stats
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+```java
+import com.skyblockexp.ezbanners.EzBannersPlugin;
+import com.skyblockexp.ezbanners.api.EzBannersApi;
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+// Get API instance
+EzBannersApi api = EzBannersPlugin.getInstance().getApi();
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+// Send stats once
+api.sendPluginStats(
+    "your-plugin-uuid",
+    yourPluginInstance,
+    1,  // server count
+    Bukkit.getOnlinePlayers().size()  // player count
+);
 
----
+// Or start auto-stats push (every 5 minutes)
+api.startAutoStatsPush("your-plugin-uuid", yourPluginInstance, 300);
+```
 
-## 🙌 Credits
+## Sync Payload Structure
 
-Developed by EzPlugins  
-Modern, powerful tools for Minecraft server owners.
+Each sync sends:
+- **Token**: API authentication token
+- **Server UUID**: Unique server identifier
+- **Timestamp**: Current timestamp in milliseconds
+- **HMAC Signature**: SHA256 signature of request body
+- **Data Fields**: Configured data fields from `enabled.data.fields`
+
+## Backoff Strategy
+
+EzBanners uses exponential backoff with jitter for failed sync attempts:
+- Formula: `interval * 2^failureCount`
+- Jitter: Random 0-25% of calculated backoff
+- Maximum: Capped at `sync.max-backoff` seconds
+- Reset: Failure count resets to 0 on successful sync
+
+## Notes
+- TPS and PlaceholderAPI values are only sent when available
+- HTTP requests are async and never block the main thread
+- All domain models are immutable for thread safety
+- Configuration is validated on load with warnings for missing values
