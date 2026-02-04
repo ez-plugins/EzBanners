@@ -6,6 +6,10 @@
     <groupId>com.skyblockexp</groupId>
     <artifactId>ezbanners</artifactId>
     <version>0.3.0</version>
+    <properties>
+        <!-- Default Paper API version for standalone builds -->
+        <paper.api.version>1.21.11-R0.1-SNAPSHOT</paper.api.version>
+    </properties>
     <name>EzBanners Plugin</name>
     <description>Collects server data and syncs it to a remote banner API.</description>
     <packaging>jar</packaging>
@@ -49,6 +53,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>copy-plugin-descriptor</id>
@@ -64,6 +69,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.2</version>
                 <executions>
                     <!-- Main plugin JAR with all classes -->
                     <execution>
