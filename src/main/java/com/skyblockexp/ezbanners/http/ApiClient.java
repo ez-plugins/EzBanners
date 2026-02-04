@@ -47,7 +47,6 @@ public class ApiClient {
     }
 
     public ApiResponse postPayloadWithHeaders(String endpoint, String json, String signature, Map<String, String> customHeaders) {
-    public ApiResponse postPayloadWithHeaders(String endpoint, String json, String signature, Map<String, String> customHeaders) {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(endpoint);
