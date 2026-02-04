@@ -3,12 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.skyblockexp</groupId>
-        <artifactId>skyblockexp-parent</artifactId>
-        <version>0.5.38-SNAPSHOT</version>
-    </parent>
- 
+    <groupId>com.skyblockexp</groupId>
     <artifactId>ezbanners</artifactId>
     <version>0.3.0</version>
     <name>EzBanners Plugin</name>
@@ -24,12 +19,7 @@
     </distributionManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>com.skyblockexp</groupId>
-            <artifactId>skyblockexp-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
+        
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
