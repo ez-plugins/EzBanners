@@ -15,7 +15,7 @@ This project produces two JAR files:
 2. **EzBanners-api.jar** - The API-only JAR for plugin developers
    - Contains only the public API interfaces and domain models
    - Use as a Maven/Gradle dependency when developing plugins that integrate with EzBanners
-   - Available from GitHub Packages: `com.github.ez-plugins:ezbanners-api:0.3.0`
+   - Available from GitHub Packages: `com.github.ez-plugins:ezbanners:0.3.0`
 
 ## Features
 - Compatible with Minecraft 1.7 – 1.21+ (Bukkit/Spigot/Paper)
@@ -168,23 +168,10 @@ Add the GitHub Packages repository and dependency to your `pom.xml`:
 <dependencies>
     <dependency>
         <groupId>com.github.ez-plugins</groupId>
-        <artifactId>ezbanners-api</artifactId>
+        <artifactId>ezbanners</artifactId>
         <version>0.3.0</version>
-        <scope>provided</scope>
     </dependency>
 </dependencies>
-```
-
-**Note:** You need to authenticate with GitHub Packages. Add your GitHub credentials to `~/.m2/settings.xml`:
-
-```xml
-<servers>
-    <server>
-        <id>github</id>
-        <username>YOUR_GITHUB_USERNAME</username>
-        <password>YOUR_GITHUB_TOKEN</password>
-    </server>
-</servers>
 ```
 
 #### Gradle
@@ -192,15 +179,11 @@ Add the GitHub Packages repository and dependency to your `pom.xml`:
 repositories {
     maven {
         url = uri("https://maven.pkg.github.com/ez-plugins/EzBanners")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-        }
     }
 }
 
 dependencies {
-    compileOnly 'com.github.ez-plugins:ezbanners-api:0.3.0'
+    compileOnly 'com.github.ez-plugins:ezbanners:0.3.0'
 }
 ```
 
