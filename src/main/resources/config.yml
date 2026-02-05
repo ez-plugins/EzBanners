@@ -10,6 +10,13 @@ server:
 sync:
   interval: 300
   max-backoff: 1200
+features:
+  metrics:
+    enabled: true
+  placeholders:
+    enabled: true
+  website-sync:
+    enabled: true
 enabled:
   data:
     fields:

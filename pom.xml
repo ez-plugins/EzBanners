@@ -3,32 +3,88 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.skyblockexp</groupId>
-        <artifactId>skyblockexp-parent</artifactId>
-        <version>0.5.38-SNAPSHOT</version>
-    </parent>
-
+    <groupId>com.skyblockexp</groupId>
     <artifactId>ezbanners</artifactId>
-    <version>0.2.1</version>
+    <version>0.3.0</version>
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <paper.api.version>1.21.11-R0.1-SNAPSHOT</paper.api.version>
+    </properties>
     <name>EzBanners Plugin</name>
     <description>Collects server data and syncs it to a remote banner API.</description>
     <packaging>jar</packaging>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/ez-plugins/EzBanners</url>
+        </repository>
+    </distributionManagement>
+
     <dependencies>
-        <dependency>
-            <groupId>com.skyblockexp</groupId>
-            <artifactId>skyblockexp-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
+    
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>${paper.api.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>papermc-repo</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>enginehub-repo</id>
+            <url>https://maven.enginehub.org/repo/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>placeholderapi-repo</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>maven-central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <finalName>EzBanners</finalName>
@@ -44,7 +100,16 @@
         </resources>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>copy-plugin-descriptor</id>
@@ -60,12 +125,64 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>org/bukkit/**</exclude>
-                    </excludes>
-                </configuration>
+                <version>3.2.2</version>
+                <executions>
+                    <!-- Main plugin JAR with all classes -->
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>org/bukkit/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- API JAR with only public API classes -->
+                    <execution>
+                        <id>api-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>api</classifier>
+                            <includes>
+                                <include>com/skyblockexp/ezbanners/api/provider/**</include>
+                                <include>com/skyblockexp/ezbanners/domain/**</include>
+                            </includes>
+                            <archive>
+                                <manifestEntries>
+                                    <Implementation-Title>EzBanners API</Implementation-Title>
+                                    <Implementation-Version>${project.version}</Implementation-Version>
+                                </manifestEntries>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+        <profiles>
+            <profile>
+                <id>feature-tests</id>
+                <build>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <version>3.2.5</version>
+                            <configuration>
+                                <includes>
+                                    <include>**/*FeatureTest.java</include>
+                                </includes>
+                                <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </build>
+            </profile>
+        </profiles>
 </project>

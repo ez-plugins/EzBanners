@@ -35,18 +35,38 @@ public class ApiClient {
 
         String json = JsonUtil.toJson(payload);
         String signature = HmacUtil.hmacSha256(token, json); // HMAC_SHA256(requestBody, token)
+        
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("X-Server-UUID", serverUuid);
+        headers.put("X-Server-Id", serverUuid);
+        headers.put("X-Server-Token", token);
+        headers.put("X-Signature", signature);
+        headers.put("X-Timestamp", String.valueOf(timestamp));
+        
+        return postPayloadWithHeaders(endpoint, json, signature, headers);
+    }
+
+    public ApiResponse postPayloadWithHeaders(String endpoint, String json, String signature, Map<String, String> customHeaders) {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(endpoint);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("User-Agent", "EzBanners/1.0");
-            connection.setRequestProperty("X-Server-UUID", serverUuid);
-            connection.setRequestProperty("X-Server-Id", serverUuid);
-            connection.setRequestProperty("X-Server-Token", token);
-            connection.setRequestProperty("X-Signature", signature);
-            connection.setRequestProperty("X-Timestamp", String.valueOf(timestamp));
+            connection.setRequestProperty("User-Agent", getUserAgent());
+            
+            // Apply custom headers
+            if (customHeaders != null) {
+                for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            
+            // Always set signature if provided
+            if (signature != null) {
+                connection.setRequestProperty("X-Signature", signature);
+            }
+            
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(8000);
             connection.setDoOutput(true);
@@ -68,6 +88,32 @@ public class ApiClient {
         }
     }
 
+    public ApiResponse postPluginUsageStats(String pluginUuid, String pluginName, String pluginVersion, int serverCount, int playerCount) {
+        String endpoint = "https://ezbanners.org/api/plugins/" + pluginUuid + "/data";
+        Map<String, Object> payload = new LinkedHashMap<>();
+        Map<String, Object> pluginInfo = new LinkedHashMap<>();
+        pluginInfo.put("name", pluginName);
+        pluginInfo.put("version", pluginVersion);
+        payload.put("plugin", pluginInfo);
+        
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("servers", serverCount);
+        stats.put("players", playerCount);
+        payload.put("stats", stats);
+        
+        String json = JsonUtil.toJson(payload);
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Content-Type", "application/json");
+        headers.put("User-Agent", getUserAgent());
+        
+        return postPayloadWithHeaders(endpoint, json, null, headers);
+    }
+
+    private String getUserAgent() {
+        String version = plugin.getDescription().getVersion();
+        return "EzBanners/" + version;
+    }
+
     public ApiResponse postPluginPayload(EzBannersConfig config, String pluginUuid, Map<String, Object> payload) {
         String endpoint = resolvePluginEndpoint(config, pluginUuid);
         String token = config.getPluginToken();
@@ -87,7 +133,7 @@ public class ApiClient {
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("User-Agent", "EzBanners/1.0");
+            connection.setRequestProperty("User-Agent", getUserAgent());
             connection.setRequestProperty("X-Plugin-Token", token);
             connection.setRequestProperty("X-Signature", signature);
             connection.setRequestProperty("X-Timestamp", String.valueOf(timestamp));

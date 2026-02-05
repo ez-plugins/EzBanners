@@ -27,6 +27,12 @@ public class ServerDataCollector {
 
     public Map<String, Object> collectData() {
         Map<String, Object> data = new LinkedHashMap<>();
+        
+        if (!config.isMetricsEnabled()) {
+            plugin.debug("Metrics collection is disabled");
+            return data;
+        }
+        
         if (config.isFieldEnabled("server_name")) {
             data.put("server_name", ServerUtil.getServerName());
         }
@@ -62,7 +68,7 @@ public class ServerDataCollector {
         if (config.isFieldEnabled("whitelist")) {
             data.put("whitelist", Bukkit.hasWhitelist());
         }
-        if (config.isFieldEnabled("placeholders")) {
+        if (config.isFieldEnabled("placeholders") && config.isPlaceholdersEnabled()) {
             Map<String, String> placeholders = ServerUtil.resolvePlaceholders(plugin, config.getPlaceholderMappings(), getContextPlayer());
             if (!placeholders.isEmpty()) {
                 data.put("placeholders", placeholders);
